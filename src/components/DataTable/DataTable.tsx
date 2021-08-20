@@ -1,58 +1,74 @@
-import React from 'react';
-import { DataGrid, GridColDef, GridValueGetterParams } from '@material-ui/data-grid';
-
+import React, {useState} from 'react';
+import { DataGrid, GridColDef, GridValueGetterParams, GridRowModel } from '@material-ui/data-grid';
+import { server_calls } from '../../api';
+import { useGetData } from '../../custom-hooks';
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle
+} from '@material-ui/core';
+import { MusicForm } from '../../components/MusicForm';
 const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 90 },
-  {
-    field: 'firstName',
-    headerName: 'First name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'lastName',
-    headerName: 'Last name',
-    width: 150,
-    editable: true,
-  },
-  {
-    field: 'age',
-    headerName: 'Age',
-    type: 'number',
-    width: 110,
-    editable: true,
-  },
-  {
-    field: 'fullName',
-    headerName: 'Full name',
-    description: 'This column has a value getter and is not sortable.',
-    sortable: false,
-    width: 160,
-    valueGetter: (params: GridValueGetterParams) =>
-      `${params.getValue(params.id, 'firstName') || ''} ${
-        params.getValue(params.id, 'lastName') || ''
-      }`,
-  },
+    { field: 'id', headerName: 'ID', width: 170 },
+    { field: 'name', headerName: 'Instrument name', width: 130 },
+    { field: 'description', headerName: 'Description', width: 130 },
+    {
+    field: 'price',
+    headerName: 'Price',
+    type: 'string',
+    width: 90,
+    }
 ];
-
-const rows = [
-  { id: 1, lastName: 'Bieber', firstName: 'Justin', age: 27 },
-  { id: 2, lastName: 'Clarkson', firstName: 'Kelly', age: 39 },
-  { id: 3, lastName: 'Mars', firstName: 'Bruno', age: 35 },
-  { id: 4, lastName: '', firstName: 'Sia', age: 45 },
-  { id: 5, lastName: 'Wilson', firstName: 'Ciara', age: 35 },
-  { id: 6, lastName: 'Mozart', firstName: 'Wolfgang-Amadeus', age: 265 },
-  { id: 7, lastName: 'Knowles-Carter ', firstName: 'Beyonce', age: 39 },
-  { id: 8, lastName: 'Rodrigo', firstName: 'Olivia', age: 18 },
-  { id: 9, lastName: 'Shark', firstName: 'Baby', age: null },
-];
-
-
+interface gridData{
+    id?: string;
+}
 export const DataTable = () => {
+    let {musicData, getData} = useGetData();
+    let [open, setOpen] = useState(false);
+    let [gridData, setData] = useState<gridData>({id:''});
+    let handleOpen = () =>{
+        setOpen(true)
+    };
+    let handleClose = () =>{
+        setOpen(false)
+
+    };
+    let handleCheckbox = (id:GridRowModel) =>{
+        if(id[0] === undefined){
+            setData({id:''})
+        }else{
+            setData({id:id[0].toString()})
+        }
+    }
+
+    let deleteData = () =>{
+      server_calls.delete(gridData.id!)
+      getData()
+    }
+
     return (
-        <div style={{ height: 400, width: '100%'}}>
-            <h2>Music Inventory</h2>
-            <DataGrid rows={rows} columns={columns} pageSize={10} checkboxSelection />
-        </div>
-    )
+      <div style={{ height: 400, width: '100%' }}>
+        <h2>Instruments In Inventory</h2>
+        <DataGrid rows={musicData} columns={columns} pageSize={5} checkboxSelection onSelectionModelChange = { handleCheckbox } />
+{/* Updated Code Below This point */ }
+      <Button onClick={handleOpen}>Update</Button>
+      <Button variant="contained" color="secondary" onClick={deleteData}>Delete</Button>
+
+        {/*Dialog Pop Up begin */}
+      <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+        <DialogTitle id="form-dialog-title">Update Instrument</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Update Instrument</DialogContentText>
+            <MusicForm id={gridData.id!}/>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick = {handleClose} color="primary">Cancel</Button>
+          <Button onClick={handleClose} color = "primary">Done</Button> 
+        </DialogActions>
+      </Dialog>
+      </div>
+    );
 }
